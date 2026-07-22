@@ -129,7 +129,7 @@ export default function CollectionPage() {
     }
 
     if (selectedColors.length > 0) {
-      result = result.filter(p => p.colors.some(c => selectedColors.includes(c)));
+      result = result.filter(p => p.colors?.some(c => selectedColors.includes(c)));
     }
 
     if (selectedProductTypes.length > 0) {
@@ -145,9 +145,17 @@ export default function CollectionPage() {
     }
 
     if (sortBy === 'price-low') {
-      result = [...result].sort((a, b) => a.price - b.price);
+      result = [...result].sort((a, b) => {
+        const numA = typeof a.price === 'number' ? a.price : parseFloat(String(a.price).replace(/[^0-9.]/g, '')) || 0;
+        const numB = typeof b.price === 'number' ? b.price : parseFloat(String(b.price).replace(/[^0-9.]/g, '')) || 0;
+        return numA - numB;
+      });
     } else if (sortBy === 'price-high') {
-      result = [...result].sort((a, b) => b.price - a.price);
+      result = [...result].sort((a, b) => {
+        const numA = typeof a.price === 'number' ? a.price : parseFloat(String(a.price).replace(/[^0-9.]/g, '')) || 0;
+        const numB = typeof b.price === 'number' ? b.price : parseFloat(String(b.price).replace(/[^0-9.]/g, '')) || 0;
+        return numB - numA;
+      });
     } else if (sortBy === 'newest') {
       result = [...result].sort((a, b) => (a.tagLeft === 'NEW' ? -1 : 1));
     }

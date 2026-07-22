@@ -17,22 +17,24 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const numPrice = typeof price === 'number' ? price : parseFloat(String(price).replace(/[^0-9.]/g, '')) || 0;
     addToCart({
-      id: `${id}-${colors[0]?.replace('#', '').toLowerCase() || 'default'}-m`,
+      id: `${id}-${colors?.[0]?.replace('#', '').toLowerCase() || 'default'}-m`,
       name: title,
-      price: price,
-      color: colors[0] || 'Default',
+      price: numPrice,
+      color: colors?.[0] || 'Default',
       size: 'M',
     });
   };
 
-  const formatPrice = (value: number) => {
+  const formatPrice = (value: any) => {
+    const num = typeof value === 'number' ? (isNaN(value) ? 0 : value) : parseFloat(String(value || '').replace(/[^0-9.]/g, '')) || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(value);
+    }).format(num);
   };
 
   return (
@@ -41,7 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
         <Link href={`/product/${slug}`} className="relative block w-full h-full" draggable={false}>
           <Image
-            src={imageUrl}
+            src={imageUrl || '/images/shirt-white.png'}
             alt={title}
             fill
             sizes="(max-width: 768px) 50vw, 33vw"

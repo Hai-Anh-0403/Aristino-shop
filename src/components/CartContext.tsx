@@ -30,13 +30,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const ids = Array.from(new Set(cookieItems.map((item) => item.id)));
         const products = await fetchProductsByIds(ids);
-        const enrichedItems = cookieItems.map((item) => {
-          const prod = products.find((p) => p.id === item.id || p._id === item.id);
+        const enrichedItems: CartItem[] = cookieItems.map((item) => {
+          const prod = products.find((p) => String(p.id) === item.id || (p._id && String(p._id) === item.id));
+          const numPrice = prod ? (typeof prod.price === 'number' ? prod.price : parseFloat(String(prod.price).replace(/[^0-9.]/g, '')) || 0) : 0;
           return {
             ...item,
-            name: prod ? prod.title : 'Premium Selection',
-            price: prod ? prod.price : 0,
-            imageUrl: prod ? prod.imageUrl : '/images/shirt-white.png',
+            name: prod ? prod.title : (item.name || 'Premium Selection'),
+            price: numPrice,
+            imageUrl: prod ? (prod.imageUrl || (prod.images && prod.images[0])) : (item.imageUrl || '/images/shirt-white.png'),
           };
         });
         setCart(enrichedItems);
