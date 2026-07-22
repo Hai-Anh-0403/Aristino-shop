@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment files & Secrets
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# AI Agent & SpecKit configuration files
+.agents/
+.specify/
+specs/
+.gemini/
+
+# Build & Output
+.next/
+dist/
+build/
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE & System
+.vscode/
+.idea/
+.DS_Store
+*.log
