@@ -1,0 +1,24 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CartCookie",
+  "description": "Cookie payload schema for local shopping bag state",
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "price": { "type": "number" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "color": { "type": "string" },
+          "size": { "type": "string" }
+        },
+        "required": ["id", "name", "price", "quantity", "color", "size"]
+      }
+    }
+  },
+  "required": ["items"]
+}
