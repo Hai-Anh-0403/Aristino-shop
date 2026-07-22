@@ -52,6 +52,16 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 app.use('/api/orders', orderRoutes);
 
+// Root Route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Shop-web API Backend is running successfully on Vercel!',
+    healthCheck: '/api/health',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
