@@ -29,6 +29,21 @@ app.use(morgan('dev'));
 // ─── Static Files ───────────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
+// ─── DB Connection Middleware (for serverless) ──────────────
+let dbConnected = false;
+app.use(async (req, res, next) => {
+  if (!dbConnected) {
+    try {
+      await connectDB();
+      dbConnected = true;
+    } catch (err) {
+      console.error('DB connection failed:', err.message);
+      return res.status(500).json({ success: false, message: 'Database connection failed' });
+    }
+  }
+  next();
+});
+
 // ─── Routes ─────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -66,16 +81,20 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ─── Start Server ───────────────────────────────────────────
-const startServer = async () => {
-  await connectDB();
+// ─── Start Server (local dev only) ──────────────────────────
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const startServer = async () => {
+    await connectDB();
+    dbConnected = true;
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📦 API base: http://localhost:${PORT}/api`);
-    console.log(`🔧 Environment: ${process.env.NODE_ENV}`);
-  });
-};
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📦 API base: http://localhost:${PORT}/api`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV}`);
+    });
+  };
 
-startServer();
+  startServer();
+}
+
 module.exports = app;
