@@ -11,6 +11,7 @@ const sliderRoutes = require('./routes/sliderRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const authRoutes = require('./routes/authRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -27,8 +28,6 @@ app.use(morgan('dev'));
 
 // ─── Static Files ───────────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-
-const orderRoutes = require('./routes/orderRoutes');
 
 // ─── Routes ─────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
@@ -48,20 +47,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`,
-  });
+// 404 Not Found Handler (Passes 404 error to central error handler)
+app.use((req, res, next) => {
+  const error = new Error(`Route ${req.originalUrl} not found`);
+  error.status = 404;
+  next(error);
 });
 
-// Global error handler
+// Centralized Global Error Handler (Express 5 compatible)
 app.use((err, req, res, next) => {
-  console.error('Unhandled error:', err.stack);
-  res.status(500).json({
+  const statusCode = err.status || err.statusCode || 500;
+  console.error(`[Express Error Handler] ${statusCode} - ${err.message}`, err.stack || '');
+
+  res.status(statusCode).json({
     success: false,
-    message: 'Internal server error',
+    message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV !== 'production' && { stack: err.stack }),
   });
 });
 

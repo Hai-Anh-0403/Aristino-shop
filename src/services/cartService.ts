@@ -9,6 +9,14 @@ export interface CartItem {
   quantity: number;
   color: string;
   size: string;
+  imageUrl?: string;
+}
+
+export interface CartCookieItem {
+  id: string;
+  color: string;
+  size: string;
+  quantity: number;
 }
 
 /**
@@ -19,19 +27,31 @@ export const getCartFromCookies = (): CartItem[] => {
   const data = Cookies.get(COOKIE_NAME);
   if (!data) return [];
   try {
-    return JSON.parse(data);
+    const rawItems = JSON.parse(data);
+    return rawItems.map((item: any) => ({
+      id: item.id,
+      color: item.color || '',
+      size: item.size || '',
+      quantity: Number(item.quantity) || 1,
+      name: item.name || '',
+      price: Number(item.price) || 0,
+      imageUrl: item.imageUrl || '',
+    }));
   } catch (error) {
     console.error('Failed to parse cart cookie data:', error);
     return [];
   }
 };
 
-/**
- * Saves the cart items to cookies with 7 days expiration.
- */
 export const saveCartToCookies = (items: CartItem[]): void => {
   if (typeof window === 'undefined') return;
-  Cookies.set(COOKIE_NAME, JSON.stringify(items), { expires: 7, path: '/' });
+  const cookieData: CartCookieItem[] = items.map((item) => ({
+    id: item.id,
+    color: item.color || '',
+    size: item.size || '',
+    quantity: item.quantity || 1,
+  }));
+  Cookies.set(COOKIE_NAME, JSON.stringify(cookieData), { expires: 7, path: '/' });
 };
 
 /**

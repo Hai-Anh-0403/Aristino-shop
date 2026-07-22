@@ -7,7 +7,7 @@ const seedProducts = [
   {
     id: 1784509572378,
     title: 'Emotional Support Husband Do Not Pet Funny Monkey (On Back) T-Shirt',
-    price: '$15.29',
+    price: 15.29,
     description: 'Mô tả sản phẩm',
     images: [
       'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=800&auto=format&fit=crop',
@@ -28,7 +28,7 @@ const seedProducts = [
   {
     id: 1784509572379,
     title: 'Vintage Retro Monkey Graphic Premium Cotton T-Shirt',
-    price: '$18.99',
+    price: 18.99,
     description: 'Áo thun cotton cao cấp in hình khỉ phong cách Vintage Retro độc đáo.',
     images: [
       'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?q=80&w=800&auto=format&fit=crop',
@@ -46,7 +46,7 @@ const seedProducts = [
   {
     id: 1784509572380,
     title: 'Minimalist Monkey Character Unisex Casual T-Shirt',
-    price: '$16.50',
+    price: 16.50,
     description: 'Áo thun unisex thiết kế tối giản hình nhân vật khỉ ngộ nghĩnh.',
     images: [
       'https://images.unsplash.com/photo-1576566588028-4147f3842f27?q=80&w=800&auto=format&fit=crop',
@@ -63,7 +63,7 @@ const seedProducts = [
   {
     id: 1784509572381,
     title: 'Aristino Premium Cotton Dress Shirt',
-    price: '$45.00',
+    price: 45.00,
     description: 'Áo sơ mi nam Aristino chất liệu 100% Cotton thoáng mát, phom dáng hiện đại.',
     images: [
       'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?q=80&w=800&auto=format&fit=crop',

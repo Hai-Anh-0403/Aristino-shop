@@ -1,5 +1,13 @@
 const mongoose = require('mongoose');
 
+const parseNumericPrice = (val) => {
+  if (typeof val === 'number') return isNaN(val) ? 0 : val;
+  if (!val) return 0;
+  const cleaned = String(val).replace(/,/g, '').replace(/[^0-9.]/g, '');
+  const parsed = parseFloat(cleaned);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 const productSchema = new mongoose.Schema(
   {
     id: {
@@ -14,10 +22,18 @@ const productSchema = new mongoose.Schema(
     price: {
       type: mongoose.Schema.Types.Mixed,
       required: [true, 'Price is required'],
+      get: parseNumericPrice,
+      set: parseNumericPrice,
+    },
+    originalPrice: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+      get: (val) => (val ? parseNumericPrice(val) : null),
+      set: (val) => (val ? parseNumericPrice(val) : null),
     },
     description: {
       type: String,
-      default: 'Mô tả sản phẩm',
+      default: 'Product description',
     },
     images: {
       type: [String],
@@ -56,6 +72,16 @@ const productSchema = new mongoose.Schema(
     originalPrice: {
       type: Number,
       default: null,
+      set: (val) => {
+        if (val === null || val === undefined || val === '') return null;
+        if (typeof val === 'number') return isNaN(val) ? null : val;
+        if (typeof val === 'string') {
+          const cleaned = val.replace(/,/g, '').replace(/[^0-9.]/g, '');
+          const parsed = parseFloat(cleaned);
+          return isNaN(parsed) ? null : parsed;
+        }
+        return null;
+      },
     },
     discount: {
       type: String,
@@ -84,8 +110,8 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true },
+    toJSON: { virtuals: true, getters: true },
+    toObject: { virtuals: true, getters: true },
     collection: 'products',
   }
 );

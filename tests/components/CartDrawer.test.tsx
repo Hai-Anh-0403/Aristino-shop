@@ -29,12 +29,17 @@ describe('Cart State Service & Drawer UI', () => {
     ];
     
     saveCartToCookies(mockItems);
-    expect(Cookies.set).toHaveBeenCalledWith('aristino_cart', JSON.stringify(mockItems), { expires: 7, path: '/' });
+    const expectedCookieItems = [
+      { id: '1', color: 'Navy', size: 'M', quantity: 1 }
+    ];
+    expect(Cookies.set).toHaveBeenCalledWith('aristino_cart', JSON.stringify(expectedCookieItems), { expires: 7, path: '/' });
     
-    // Mock get cookie returns
-    (Cookies.get as jest.Mock).mockReturnValueOnce(JSON.stringify(mockItems));
+    // Mock get cookie returns minimal item representation
+    (Cookies.get as jest.Mock).mockReturnValueOnce(JSON.stringify(expectedCookieItems));
     const loadedItems = getCartFromCookies();
-    expect(loadedItems).toEqual(mockItems);
+    expect(loadedItems).toEqual([
+      { id: '1', name: '', price: 0, quantity: 1, color: 'Navy', size: 'M', imageUrl: '' }
+    ]);
   });
 
   it('renders empty cart drawer UI representation', () => {

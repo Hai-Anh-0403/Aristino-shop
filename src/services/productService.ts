@@ -137,3 +137,48 @@ export const getProductsByCollection = (slug: string): Product[] => {
   
   return list;
 };
+
+/**
+ * Async API fetcher: fetch details for multiple products by their IDs
+ */
+export const fetchProductsByIds = async (ids: string[]): Promise<Product[]> => {
+  if (!ids || ids.length === 0) return [];
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+  try {
+    const query = new URLSearchParams({ ids: ids.join(','), limit: String(Math.max(100, ids.length)) });
+    const res = await fetch(`${API_URL}/products?${query.toString()}`);
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) {
+      return data.data.map((p: any) => ({
+        _id: p._id,
+        id: p.id || p._id,
+        brand: p.brand || 'Aristino',
+        title: p.title,
+        price: typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^0-9.]/g, '')) || 0,
+        originalPrice: p.originalPrice ? (typeof p.originalPrice === 'number' ? p.originalPrice : parseFloat(String(p.originalPrice).replace(/[^0-9.]/g, '')) || undefined) : undefined,
+        discount: p.discount || undefined,
+        description: p.description || '',
+        imageUrl: p.imageUrl || (p.images && p.images[0]) || '',
+        images: p.images || (p.imageUrl ? [p.imageUrl] : []),
+        color: p.color || '',
+        colors: p.colors || (p.color ? [p.color] : []),
+        theme: p.theme || '',
+        status: p.status || '',
+        done: p.done,
+        uploadedAt: p.uploadedAt,
+        slug: p.slug || p.id || p._id,
+        tagLeft: p.tagLeft,
+        tagRight: p.tagRight,
+      }));
+    }
+    return [];
+  } catch (err) {
+    console.warn('Failed to fetch products by IDs from API, using fallback mock data:', err);
+    try {
+      const mockProducts = generateMockSuits();
+      return mockProducts.filter(p => ids.includes(String(p.id)) || ids.includes(String(p._id)));
+    } catch {
+      return [];
+    }
+  }
+};

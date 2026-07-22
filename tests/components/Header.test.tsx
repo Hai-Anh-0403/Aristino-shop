@@ -18,18 +18,11 @@ describe('Header Component', () => {
     
     // Nav categories checklist in premium English
     const expectedLinks = [
-      'APPAREL',
-      'ACCESSORIES',
-      'LEATHER GOODS',
-      'BRANDS',
-      'ACTIVEWEAR',
-      'Online Exclusives',
-      'Collections',
-      'New Arrivals',
+      'NEW ARRIVALS',
       'Tops',
       'Bottoms',
-      'Suits & Blazers',
-      'Underwear & Loungewear',
+      'Accessories',
+      'SALE',
     ];
     
     expectedLinks.forEach((linkText) => {

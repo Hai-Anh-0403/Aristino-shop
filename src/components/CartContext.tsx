@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { CartItem, getCartFromCookies, saveCartToCookies, addItemToCart, removeItemFromCart } from '../services/cartService';
+import { fetchProductsByIds } from '../services/productService';
 
 interface CartContextType {
   cart: CartItem[];
@@ -20,7 +21,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
-    setCart(getCartFromCookies());
+    const loadCart = async () => {
+      const cookieItems = getCartFromCookies();
+      if (cookieItems.length === 0) {
+        setCart([]);
+        return;
+      }
+      try {
+        const ids = Array.from(new Set(cookieItems.map((item) => item.id)));
+        const products = await fetchProductsByIds(ids);
+        const enrichedItems = cookieItems.map((item) => {
+          const prod = products.find((p) => p.id === item.id || p._id === item.id);
+          return {
+            ...item,
+            name: prod ? prod.title : 'Premium Selection',
+            price: prod ? prod.price : 0,
+            imageUrl: prod ? prod.imageUrl : '/images/shirt-white.png',
+          };
+        });
+        setCart(enrichedItems);
+      } catch (err) {
+        console.error('Error loading cart details:', err);
+        setCart(cookieItems);
+      }
+    };
+
+    loadCart();
   }, []);
 
   const openDrawer = () => setIsDrawerOpen(true);

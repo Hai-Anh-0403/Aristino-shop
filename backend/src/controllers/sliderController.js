@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 /**
- * @desc    Lấy danh sách slider đang active
+ * @desc    Get active sliders list
  * @route   GET /api/sliders
  */
 const getSliders = async (req, res) => {
@@ -24,7 +24,7 @@ const getSliders = async (req, res) => {
 };
 
 /**
- * @desc    Lấy tất cả sliders (bao gồm inactive, dành cho admin)
+ * @desc    Get all sliders (including inactive, for admin)
  * @route   GET /api/sliders/all
  */
 const getAllSliders = async (req, res) => {
@@ -45,7 +45,7 @@ const getAllSliders = async (req, res) => {
 };
 
 /**
- * @desc    Upload nhiều ảnh từ máy tính
+ * @desc    Upload multiple images from computer
  * @route   POST /api/sliders/upload
  */
 const uploadSlider = async (req, res) => {
@@ -87,7 +87,7 @@ const uploadSlider = async (req, res) => {
 };
 
 /**
- * @desc    Xóa slider
+ * @desc    Delete slider
  * @route   DELETE /api/sliders/:id
  */
 const deleteSlider = async (req, res) => {
@@ -124,7 +124,7 @@ const deleteSlider = async (req, res) => {
 };
 
 /**
- * @desc    Cập nhật thứ tự slider
+ * @desc    Update slider order
  * @route   PUT /api/sliders/reorder
  * @body    { sliders: [{id, order}] }
  */

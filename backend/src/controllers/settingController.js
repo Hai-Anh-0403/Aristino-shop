@@ -86,6 +86,9 @@ const getDefaultSetting = (key) => {
       ];
     case 'kol_slider_products':
       return [];
+    case 'flash_sale_end_time':
+      // Default: 24 hours from now
+      return { endTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() };
 
     default:
       return null;

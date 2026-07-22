@@ -1,7 +1,18 @@
+const mongoose = require('mongoose');
+const crypto = require('crypto');
 const Order = require('../models/Order');
+const Product = require('../models/Product');
 
 /**
- * @desc    Lấy tất cả đơn hàng (Hỗ trợ phân trang, tìm kiếm & lọc trạng thái)
+ * Helper to escape special regular expression characters to prevent ReDoS / Regex Injection.
+ */
+const escapeRegex = (str) => {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+/**
+ * @desc    Get all orders (Supports pagination, search & status filtering)
  * @route   GET /api/orders
  */
 const getOrders = async (req, res) => {
@@ -15,7 +26,7 @@ const getOrders = async (req, res) => {
     }
 
     if (search && search.trim()) {
-      const regex = new RegExp(search.trim(), 'i');
+      const regex = new RegExp(escapeRegex(search.trim()), 'i');
       filter.$or = [
         { orderNumber: regex },
         { customerName: regex },
@@ -96,7 +107,7 @@ const getOrders = async (req, res) => {
 };
 
 /**
- * @desc    Lấy chi tiết đơn hàng theo ID hoặc OrderNumber
+ * @desc    Get order details by ID or OrderNumber
  * @route   GET /api/orders/:id
  */
 const getOrderById = async (req, res) => {
@@ -132,7 +143,7 @@ const getOrderById = async (req, res) => {
 };
 
 /**
- * @desc    Tạo đơn hàng mới (Từ Checkout)
+ * @desc    Create new order (From Checkout)
  * @route   POST /api/orders
  */
 const createOrder = async (req, res) => {
@@ -144,7 +155,6 @@ const createOrder = async (req, res) => {
       shippingAddress,
       paymentMethod,
       items,
-      subtotal,
       shippingFee,
       notes,
     } = req.body;
@@ -156,27 +166,87 @@ const createOrder = async (req, res) => {
       });
     }
 
-    const count = await Order.countDocuments();
-    const orderNumber = `ORD-${Date.now().toString().slice(-6)}-${(count + 1).toString().padStart(3, '0')}`;
+    // Verify item prices against DB to prevent client-side price tampering
+    let calculatedSubtotal = 0;
+    const verifiedItems = [];
 
-    const numSubtotal = Number(subtotal) || 0;
-    const numShippingFee = Number(shippingFee) || 0;
-    const totalAmount = numSubtotal + numShippingFee;
+    for (const item of items) {
+      const productId = item.productId || item._id || item.id;
+      let dbProduct = null;
 
-    const newOrder = await Order.create({
-      orderNumber,
-      customerName,
-      customerEmail,
-      phone: phone || '',
-      shippingAddress: shippingAddress || '',
-      paymentMethod: paymentMethod || 'COD',
-      items,
-      subtotal: numSubtotal,
-      shippingFee: numShippingFee,
-      totalAmount,
-      status: 'Processing',
-      notes: notes || '',
-    });
+      if (productId && mongoose.Types.ObjectId.isValid(productId)) {
+        dbProduct = await Product.findById(productId);
+      }
+      if (!dbProduct && item.slug) {
+        dbProduct = await Product.findOne({ slug: item.slug });
+      }
+      if (!dbProduct && item.title) {
+        dbProduct = await Product.findOne({ title: item.title });
+      }
+
+      // Use authoritative DB unit price if available
+      const unitPrice = dbProduct
+        ? dbProduct.price
+        : (typeof item.price === 'number' && item.price >= 0 ? item.price : 0);
+      const qty = Math.max(1, parseInt(item.quantity, 10) || 1);
+      const itemSubtotal = unitPrice * qty;
+      calculatedSubtotal += itemSubtotal;
+
+      const itemTitle = dbProduct ? dbProduct.title : (item.title || item.name || 'Product Item');
+      const itemColor = item.color || item.selectedColor || '';
+      const itemSize = item.size || item.selectedSize || '';
+      const itemImg = dbProduct ? (dbProduct.imageUrl || (dbProduct.images && dbProduct.images[0])) : (item.imageUrl || '');
+
+      verifiedItems.push({
+        id: String(dbProduct ? dbProduct._id : (productId || Date.now())),
+        productId: dbProduct ? dbProduct._id : (productId || null),
+        name: itemTitle,
+        title: itemTitle,
+        quantity: qty,
+        price: unitPrice,
+        color: itemColor,
+        selectedColor: itemColor,
+        size: itemSize,
+        selectedSize: itemSize,
+        imageUrl: itemImg,
+      });
+    }
+
+    const numShippingFee = Math.max(0, Number(shippingFee) || 0);
+    const verifiedTotalAmount = calculatedSubtotal + numShippingFee;
+
+    let newOrder;
+    let retries = 5;
+    while (retries > 0) {
+      try {
+        const count = await Order.countDocuments();
+        const timestamp = Date.now().toString().slice(-6);
+        const orderNumber = `ORD-${timestamp}-${(count + 1).toString().padStart(3, '0')}`;
+
+        newOrder = await Order.create({
+          orderNumber,
+          customerName,
+          customerEmail,
+          phone: phone || '',
+          shippingAddress: shippingAddress || '',
+          paymentMethod: paymentMethod || 'COD',
+          items: verifiedItems,
+          subtotal: calculatedSubtotal,
+          shippingFee: numShippingFee,
+          totalAmount: verifiedTotalAmount,
+          status: 'Processing',
+          notes: notes || '',
+        });
+        break;
+      } catch (err) {
+        if (err.code === 11000 && err.message.includes('orderNumber') && retries > 1) {
+          retries--;
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          continue;
+        }
+        throw err;
+      }
+    }
 
     res.status(201).json({
       success: true,
@@ -184,16 +254,16 @@ const createOrder = async (req, res) => {
       message: 'Order placed successfully',
     });
   } catch (error) {
-    console.error('createOrder error:', error.message);
+    console.error('createOrder error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error while creating order',
+      message: error.message || 'Server error while creating order',
     });
   }
 };
 
 /**
- * @desc    Cập nhật trạng thái đơn hàng (Dành cho Admin)
+ * @desc    Update order status (For Admin)
  * @route   PUT /api/orders/:id/status
  */
 const updateOrderStatus = async (req, res) => {
@@ -235,7 +305,7 @@ const updateOrderStatus = async (req, res) => {
 };
 
 /**
- * @desc    Xóa đơn hàng (Admin)
+ * @desc    Delete order (Admin)
  * @route   DELETE /api/orders/:id
  */
 const deleteOrder = async (req, res) => {

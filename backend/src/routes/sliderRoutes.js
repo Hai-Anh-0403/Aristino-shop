@@ -2,20 +2,22 @@ const express = require('express');
 const router = express.Router();
 const sliderController = require('../controllers/sliderController');
 const upload = require('../middleware/uploadMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
-// GET /api/sliders — Lấy sliders đang active (public)
+// GET /api/sliders — Get active sliders (public)
 router.get('/', sliderController.getSliders);
 
-// GET /api/sliders/all — Lấy tất cả sliders (admin)
-router.get('/all', sliderController.getAllSliders);
+// Protected Admin Routes:
+// GET /api/sliders/all — Get all sliders (admin)
+router.get('/all', protect, sliderController.getAllSliders);
 
-// POST /api/sliders/upload — Upload ảnh từ máy tính
-router.post('/upload', upload.array('images', 10), sliderController.uploadSlider);
+// POST /api/sliders/upload — Upload images from computer
+router.post('/upload', protect, upload.array('images', 10), sliderController.uploadSlider);
 
-// PUT /api/sliders/reorder — Sắp xếp thứ tự
-router.put('/reorder', sliderController.reorderSliders);
+// PUT /api/sliders/reorder — Reorder sliders
+router.put('/reorder', protect, sliderController.reorderSliders);
 
-// DELETE /api/sliders/:id — Xóa slider
-router.delete('/:id', sliderController.deleteSlider);
+// DELETE /api/sliders/:id — Delete slider
+router.delete('/:id', protect, sliderController.deleteSlider);
 
 module.exports = router;

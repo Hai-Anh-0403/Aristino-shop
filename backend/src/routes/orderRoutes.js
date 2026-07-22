@@ -7,11 +7,18 @@ const {
   updateOrderStatus,
   deleteOrder,
 } = require('../controllers/orderController');
+const { protect } = require('../middleware/authMiddleware');
 
-router.get('/', getOrders);
-router.post('/', createOrder);
-router.get('/:id', getOrderById);
-router.put('/:id/status', updateOrderStatus);
-router.delete('/:id', deleteOrder);
+const validate = require('../middleware/validate');
+const { createOrderSchema, updateOrderStatusSchema } = require('../middleware/schemas');
+
+// Public checkout order creation
+router.post('/', validate(createOrderSchema), createOrder);
+
+// Protected Admin order management routes
+router.get('/', protect, getOrders);
+router.get('/:id', protect, getOrderById);
+router.put('/:id/status', protect, validate(updateOrderStatusSchema), updateOrderStatus);
+router.delete('/:id', protect, deleteOrder);
 
 module.exports = router;

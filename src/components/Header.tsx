@@ -132,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
             <div className="flex lg:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                className="text-brand-charcoal hover:opacity-70 transition-opacity duration-200"
+                className="text-brand-navy hover:opacity-70 transition-opacity duration-200"
                 aria-label="Open Navigation Menu"
               >
                 <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
             </div>
 
             {/* Right actions */}
-            <div className="flex items-center space-x-6 text-brand-charcoal">
+            <div className="flex items-center space-x-6 text-brand-navy">
               {/* Search */}
               <button 
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
@@ -193,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
-                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-charcoal scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-navy scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               </button>
 
               {/* Account */}
@@ -201,7 +201,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-charcoal scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-navy scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               </Link>
 
               {/* Wishlist (Heart icon) */}
@@ -212,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
                 <span className="absolute -top-1 -right-1.5 bg-black text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   0
                 </span>
-                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-charcoal scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-navy scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               </Link>
 
               {/* Shopping Bag */}
@@ -227,7 +227,7 @@ export const Header: React.FC<HeaderProps> = ({ cartCount = 0, onCartClick }) =>
                 <span className="absolute -top-1 -right-1.5 bg-black text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   {cartCount}
                 </span>
-                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-charcoal scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
+                <span className="absolute bottom-0 left-0 w-full h-[1.5px] bg-brand-navy scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
               </button>
             </div>
 

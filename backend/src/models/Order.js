@@ -1,12 +1,16 @@
 const mongoose = require('mongoose');
 
 const orderItemSchema = new mongoose.Schema({
-  id: { type: String, required: true },
-  name: { type: String, required: true },
+  id: { type: String },
+  productId: { type: mongoose.Schema.Types.Mixed },
+  name: { type: String },
+  title: { type: String },
   price: { type: Number, required: true },
   quantity: { type: Number, required: true, default: 1 },
   color: { type: String },
+  selectedColor: { type: String },
   size: { type: String },
+  selectedSize: { type: String },
   imageUrl: { type: String },
 });
 

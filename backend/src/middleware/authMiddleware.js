@@ -13,15 +13,17 @@ const protect = async (req, res, next) => {
   try {
     let token;
 
-    // 1. Extract Bearer token from Authorization header
+    // 1. Extract Bearer token from Authorization header or cookies
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies && (req.cookies.token || req.cookies.accessToken || req.cookies.refreshToken)) {
+      token = req.cookies.token || req.cookies.accessToken || req.cookies.refreshToken;
     }
 
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Chưa xác thực: Không tìm thấy Access Token',
+        message: 'Unauthorized: Access Token not found',
       });
     }
 
@@ -34,12 +36,12 @@ const protect = async (req, res, next) => {
         return res.status(401).json({
           success: false,
           code: 'TOKEN_EXPIRED',
-          message: 'Access Token đã hết hạn',
+          message: 'Access Token has expired',
         });
       }
       return res.status(401).json({
         success: false,
-        message: 'Access Token không hợp lệ',
+        message: 'Invalid Access Token',
       });
     }
 
@@ -48,7 +50,7 @@ const protect = async (req, res, next) => {
     if (!sessionId) {
       return res.status(401).json({
         success: false,
-        message: 'Token không hợp lệ: Thiếu session_id',
+        message: 'Invalid token: Missing session_id',
       });
     }
 
@@ -58,7 +60,7 @@ const protect = async (req, res, next) => {
     if (!session) {
       return res.status(401).json({
         success: false,
-        message: 'Phiên làm việc không tồn tại hoặc đã bị hủy',
+        message: 'Session does not exist or has been revoked',
       });
     }
 
@@ -66,7 +68,7 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         code: 'SESSION_REVOKED',
-        message: 'Phiên làm việc đã bị ép đăng xuất bởi Admin hoặc hệ thống',
+        message: 'Session was terminated by Admin or system',
       });
     }
 
@@ -74,7 +76,7 @@ const protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         code: 'SESSION_EXPIRED',
-        message: 'Phiên làm việc đã hết hạn trong cơ sở dữ liệu',
+        message: 'Session has expired in the database',
       });
     }
 
@@ -84,7 +86,7 @@ const protect = async (req, res, next) => {
     if (!user || !user.is_active) {
       return res.status(401).json({
         success: false,
-        message: 'Tài khoản không tồn tại hoặc đã bị khóa',
+        message: 'Account does not exist or is locked',
       });
     }
 
@@ -97,7 +99,7 @@ const protect = async (req, res, next) => {
     console.error('Error in protect middleware:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi xác thực phiên làm việc',
+      message: 'System error during session authentication',
     });
   }
 };
@@ -110,7 +112,7 @@ const requireSuperAdmin = (req, res, next) => {
   if (!req.user || req.user.role !== 'superadmin') {
     return res.status(403).json({
       success: false,
-      message: 'Quyền truy cập bị từ chối: Yêu cầu quyền SuperAdmin',
+      message: 'Access denied: SuperAdmin role required',
     });
   }
   next();

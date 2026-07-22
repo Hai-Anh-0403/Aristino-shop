@@ -2,7 +2,15 @@ const Product = require('../models/Product');
 const mongoose = require('mongoose');
 
 /**
- * @desc    Lấy danh sách sản phẩm (phân trang, filter, search)
+ * Helper to escape special regular expression characters to prevent ReDoS / Regex Injection.
+ */
+const escapeRegex = (str) => {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+/**
+ * @desc    Get list of products (pagination, filter, search)
  * @route   GET /api/products
  * @query   page, limit, brand, theme, search, sort, tag, isFlashSale, isLookbook
  */
@@ -32,11 +40,11 @@ const getProducts = async (req, res) => {
     }
 
     if (brand) {
-      filter.brand = new RegExp(brand, 'i');
+      filter.brand = new RegExp(escapeRegex(brand), 'i');
     }
 
     if (theme) {
-      filter.theme = new RegExp(theme, 'i');
+      filter.theme = new RegExp(escapeRegex(theme), 'i');
     }
 
     if (tag) {
@@ -51,7 +59,7 @@ const getProducts = async (req, res) => {
     }
 
     if (search) {
-      const searchRegex = new RegExp(search, 'i');
+      const searchRegex = new RegExp(escapeRegex(search), 'i');
       filter.$or = [
         { title: searchRegex },
         { brand: searchRegex },
@@ -89,7 +97,7 @@ const getProducts = async (req, res) => {
 };
 
 /**
- * @desc    Lấy chi tiết sản phẩm theo slug hoặc id hoặc _id
+ * @desc    Get product details by slug, id, or _id
  * @route   GET /api/products/:slug
  */
 const getProductBySlug = async (req, res) => {
@@ -148,12 +156,28 @@ const getProductBySlug = async (req, res) => {
 };
 
 /**
- * @desc    Tạo sản phẩm mới
+ * @desc    Create a new product
+ * @route   POST /api/products
+ */
+const ALLOWED_PRODUCT_FIELDS = [
+  'brand', 'title', 'price', 'originalPrice', 'discount', 'description',
+  'imageUrl', 'images', 'color', 'colors', 'theme', 'slug', 'tagLeft', 'tagRight',
+  'isFlashSale', 'isLookbook', 'done'
+];
+
+/**
+ * @desc    Create a new product
  * @route   POST /api/products
  */
 const createProduct = async (req, res) => {
   try {
-    const productData = { ...req.body };
+    const productData = {};
+    for (const field of ALLOWED_PRODUCT_FIELDS) {
+      if (req.body[field] !== undefined) {
+        productData[field] = req.body[field];
+      }
+    }
+
     if (!productData.slug && productData.title) {
       productData.slug = productData.title
         .toLowerCase()
@@ -186,7 +210,7 @@ const createProduct = async (req, res) => {
 };
 
 /**
- * @desc    Cập nhật sản phẩm theo ID / _id
+ * @desc    Update product by ID / _id
  * @route   PUT /api/products/:id
  */
 const updateProduct = async (req, res) => {
@@ -194,8 +218,15 @@ const updateProduct = async (req, res) => {
     const param = req.params.id;
     let product = null;
 
+    const updateData = {};
+    for (const field of ALLOWED_PRODUCT_FIELDS) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
     if (mongoose.Types.ObjectId.isValid(param)) {
-      product = await Product.findByIdAndUpdate(param, req.body, {
+      product = await Product.findByIdAndUpdate(param, updateData, {
         new: true,
         runValidators: true,
       });
@@ -204,7 +235,7 @@ const updateProduct = async (req, res) => {
     if (!product) {
       const numId = Number(param);
       const query = !isNaN(numId) ? { id: numId } : { id: param };
-      product = await Product.findOneAndUpdate(query, req.body, {
+      product = await Product.findOneAndUpdate(query, updateData, {
         new: true,
         runValidators: true,
       });
@@ -240,7 +271,7 @@ const updateProduct = async (req, res) => {
 };
 
 /**
- * @desc    Xóa sản phẩm theo ID / _id
+ * @desc    Delete product by ID / _id
  * @route   DELETE /api/products/:id
  */
 const deleteProduct = async (req, res) => {

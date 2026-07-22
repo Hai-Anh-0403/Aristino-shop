@@ -1,7 +1,10 @@
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const UserSession = require('../models/UserSession');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_change_in_production';
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'fallback_refresh_secret_key_change_in_production';
@@ -41,7 +44,7 @@ const login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp email và mật khẩu',
+        message: 'Please provide email and password',
       });
     }
 
@@ -50,7 +53,7 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Email hoặc mật khẩu không chính xác',
+        message: 'Incorrect email or password',
       });
     }
 
@@ -58,7 +61,7 @@ const login = async (req, res) => {
     if (!user.is_active) {
       return res.status(403).json({
         success: false,
-        message: 'Tài khoản đã bị khóa',
+        message: 'Account is locked',
       });
     }
 
@@ -67,7 +70,7 @@ const login = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Email hoặc mật khẩu không chính xác',
+        message: 'Incorrect email or password',
       });
     }
 
@@ -105,13 +108,14 @@ const login = async (req, res) => {
       expires_at: expiresAt,
     });
 
-    // 7. Store Refresh Token in secure HttpOnly cookie
+    // 7. Store Access Token & Refresh Token in secure HttpOnly cookies
+    res.cookie('token', accessToken, getCookieOptions());
     res.cookie('refreshToken', refreshToken, getCookieOptions());
 
     // 8. Return response with Access Token and User payload
     return res.status(200).json({
       success: true,
-      message: 'Đăng nhập thành công',
+      message: 'Login successful',
       accessToken,
       user: {
         id: user._id,
@@ -124,7 +128,7 @@ const login = async (req, res) => {
     console.error('Login Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Đã xảy ra lỗi trong quá trình xử lý đăng nhập',
+      message: 'An error occurred during login processing',
     });
   }
 };
@@ -142,7 +146,7 @@ const refreshToken = async (req, res) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: 'Không tìm thấy Refresh Token',
+        message: 'Refresh Token not found',
       });
     }
 
@@ -155,7 +159,7 @@ const refreshToken = async (req, res) => {
       res.clearCookie('refreshToken', getCookieOptions());
       return res.status(401).json({
         success: false,
-        message: 'Refresh Token không hợp lệ hoặc đã hết hạn',
+        message: 'Invalid or expired Refresh Token',
       });
     }
 
@@ -170,7 +174,7 @@ const refreshToken = async (req, res) => {
       res.clearCookie('refreshToken', getCookieOptions());
       return res.status(401).json({
         success: false,
-        message: 'Phiên đăng nhập không hợp lệ hoặc token không khớp',
+        message: 'Invalid login session or token mismatch',
       });
     }
 
@@ -179,7 +183,7 @@ const refreshToken = async (req, res) => {
       return res.status(401).json({
         success: false,
         code: 'SESSION_REVOKED',
-        message: 'Phiên làm việc này đã bị thu hồi/ép đăng xuất',
+        message: 'This session has been revoked/forced logout',
       });
     }
 
@@ -188,7 +192,7 @@ const refreshToken = async (req, res) => {
       return res.status(401).json({
         success: false,
         code: 'SESSION_EXPIRED',
-        message: 'Phiên làm việc đã hết hạn',
+        message: 'Session has expired',
       });
     }
 
@@ -198,7 +202,7 @@ const refreshToken = async (req, res) => {
       res.clearCookie('refreshToken', getCookieOptions());
       return res.status(401).json({
         success: false,
-        message: 'Tài khoản không tồn tại hoặc đã bị khóa',
+        message: 'Account does not exist or is locked',
       });
     }
 
@@ -211,14 +215,14 @@ const refreshToken = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Cấp mới Access Token thành công',
+      message: 'Access Token refreshed successfully',
       accessToken: newAccessToken,
     });
   } catch (error) {
     console.error('Refresh Token Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi làm mới token',
+      message: 'System error while refreshing token',
     });
   }
 };
@@ -245,13 +249,13 @@ const logout = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: 'Đăng xuất thành công',
+      message: 'Logout successful',
     });
   } catch (error) {
     console.error('Logout Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi đăng xuất',
+      message: 'System error during logout',
     });
   }
 };
@@ -294,7 +298,7 @@ const listSessions = async (req, res) => {
     console.error('List Sessions Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi lấy danh sách phiên',
+      message: 'System error while fetching sessions',
     });
   }
 };
@@ -313,7 +317,7 @@ const revokeSession = async (req, res) => {
     if (!session) {
       return res.status(404).json({
         success: false,
-        message: 'Không tìm thấy phiên làm việc',
+        message: 'Session not found',
       });
     }
 
@@ -324,7 +328,7 @@ const revokeSession = async (req, res) => {
     if (!isOwner && !isSuperAdmin) {
       return res.status(403).json({
         success: false,
-        message: 'Bạn không có quyền thu hồi phiên làm việc này',
+        message: 'You do not have permission to revoke this session',
       });
     }
 
@@ -334,13 +338,13 @@ const revokeSession = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: `Đã thu hồi thành công phiên làm việc ${sessionId}`,
+      message: `Successfully revoked session ${sessionId}`,
     });
   } catch (error) {
     console.error('Revoke Session Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi hệ thống khi thu hồi phiên làm việc',
+      message: 'System error while revoking session',
     });
   }
 };
@@ -379,62 +383,63 @@ const googleLogin = async (req, res) => {
     if (!token) {
       return res.status(400).json({
         success: false,
-        message: 'Vui lòng cung cấp Google ID Token',
+        message: 'Please provide Google ID Token',
       });
     }
 
-    // Verify Google token via Google tokeninfo API
-    let googleUser = null;
+    // Verify Google ID Token using official Google OAuth2 Client
+    let payload = null;
     try {
-      const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`);
-      if (response.ok) {
-        googleUser = await response.json();
-      }
+      const ticket = await googleClient.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      payload = ticket.getPayload();
     } catch (err) {
-      console.warn('Backend fetch to Google tokeninfo failed, fallback token decode:', err.message);
-    }
-
-    // Fallback parsing if tokeninfo network request had issue in dev
-    if (!googleUser || !googleUser.email) {
+      console.warn('Google verifyIdToken failed, trying Google tokeninfo endpoint:', err.message);
+      // Fallback check using official Google tokeninfo API endpoint
       try {
-        const parts = token.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf-8'));
-          googleUser = payload;
+        const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(token)}`);
+        if (response.ok) {
+          const tokenInfo = await response.json();
+          if (tokenInfo && tokenInfo.email) {
+            payload = tokenInfo;
+          }
         }
-      } catch (e) {
-        // Ignored
+      } catch (fetchErr) {
+        console.error('Google tokeninfo fetch failed:', fetchErr.message);
       }
     }
 
-    if (!googleUser || !googleUser.email) {
+    // Strict validation: Reject request if signature validation failed or payload is missing
+    if (!payload || !payload.email) {
       return res.status(401).json({
         success: false,
-        message: 'Google ID Token không hợp lệ hoặc đã hết hạn',
+        message: 'Google ID Token is invalid or expired',
       });
     }
 
-    const email = googleUser.email.toLowerCase();
-    const name = googleUser.name || 'Google User';
-    const picture = googleUser.picture || '';
+    const email = payload.email.toLowerCase();
+    const name = payload.name || 'Google User';
+    const picture = payload.picture || '';
 
     return res.status(200).json({
       success: true,
-      message: 'Đăng nhập Google thành công',
+      message: 'Google login successful',
       user: {
         email,
-        firstName: googleUser.given_name || name.split(' ')[0] || 'Google',
-        lastName: googleUser.family_name || name.split(' ').slice(1).join(' ') || 'User',
+        firstName: payload.given_name || name.split(' ')[0] || 'Google',
+        lastName: payload.family_name || name.split(' ').slice(1).join(' ') || 'User',
         provider: 'google',
         avatarUrl: picture,
-        googleId: googleUser.sub || googleUser.user_id,
+        googleId: payload.sub || payload.user_id,
       },
     });
   } catch (error) {
     console.error('Google Login Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi xử lý đăng nhập bằng Google',
+      message: 'Error processing Google login',
     });
   }
 };
